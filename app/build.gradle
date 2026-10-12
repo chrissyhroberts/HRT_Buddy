@@ -1,0 +1,17 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android { namespace 'com.hrtbuddy'; compileSdk 35
+    defaultConfig { applicationId 'com.hrtbuddy'; minSdk 26; targetSdk 35; versionCode 1; versionName '1.0.0' }
+}
+
+dependencies { testImplementation 'junit:junit:4.13.2' }
+
+// Android Studio may request this tooling-only task while importing the project.
+// The app has no Kotlin sources, but providing the model hook keeps IDE sync compatible.
+tasks.register('prepareKotlinBuildScriptModel') {
+    group = 'ide'
+    description = 'Prepares the Kotlin build script model for IDE tooling.'
+}

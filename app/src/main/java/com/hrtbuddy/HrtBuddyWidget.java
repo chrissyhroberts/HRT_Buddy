@@ -1,0 +1,121 @@
+package com.hrtbuddy;
+
+import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProvider;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.widget.RemoteViews;
+import java.time.LocalDate;
+
+public class HrtBuddyWidget extends AppWidgetProvider {
+    public void onUpdate(Context c, AppWidgetManager manager, int[] ids) { for (int id : ids) update(c, manager, id); }
+    public void onAppWidgetOptionsChanged(Context c, AppWidgetManager manager, int id, android.os.Bundle options) { update(c, manager, id); }
+
+    static int scoreColor(int score) {
+        int[] palette={Color.rgb(58,190,139),Color.rgb(65,190,168),Color.rgb(73,184,196),Color.rgb(83,174,210),Color.rgb(105,160,215),Color.rgb(126,143,211),Color.rgb(151,126,210),Color.rgb(190,112,190),Color.rgb(221,105,135),Color.rgb(216,82,91)};
+        return palette[Math.max(1,Math.min(10,score))-1];
+    }
+
+    static int color(Context c, LocalDate date, String type) {
+        LocalDate today=State.careDate();
+        if(type.equals("patch")||type.equals("pill")) {
+            if(!State.scheduled(c,date,type)) return Color.rgb(246,244,249);
+            if(State.confirmedOn(c,date,type)) return Color.rgb(126,205,145);
+            if(State.skippedOn(c,date,type)||date.isBefore(today)) return Color.rgb(239,145,148);
+            return Color.rgb(255,211,102);
+        }
+        if(type.equals("bleeding")) {
+            String value=State.dailyText(c,date,"bleeding");
+            if(value.equals("None")) return Color.rgb(174,218,190);
+            if(value.equals("Heavy")) return Color.rgb(216,82,91);
+            if(value.equals("Medium")) return Color.rgb(221,105,135);
+            if(value.equals("Light")) return Color.rgb(248,176,176);
+            if(value.equals("Spotting")) return Color.rgb(255,218,150);
+            return Color.rgb(246,244,249);
+        }
+        if(State.skippedOn(c,date,"checkin")) return Color.rgb(239,145,148);
+        int value=State.dailyInt(c,date,type);
+        return value<0?Color.rgb(246,244,249):scoreColor(value);
+    }
+
+    static void update(Context c, AppWidgetManager manager, int id) {
+        try {
+            RemoteViews view=new RemoteViews(c.getPackageName(),R.layout.widget);
+            Intent open=new Intent(c,MainActivity.class);
+            view.setOnClickPendingIntent(R.id.widget_root,PendingIntent.getActivity(c,40,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));
+            int cycle=Math.max(1,Math.min(60,State.cycle(c)));
+            view.setTextViewText(R.id.widget_title,"HRT BUDDY  ·  FULL CYCLE");
+            view.setTextViewText(R.id.widget_day,"Day "+State.day(c)+" / "+cycle);
+            view.setTextViewText(R.id.widget_status,State.status(c));
+            String patchDays=State.p(c).getString("patchDays","TUE,SAT").replace("TUE","Tue").replace("WED","Wed").replace("THU","Thu").replace("FRI","Fri").replace("SAT","Sat").replace("SUN","Sun").replace("MON","Mon");
+            LocalDate today=State.careDate();
+            LocalDate first=State.cycleStart(c);
+            view.setTextViewText(R.id.widget_map_patch_text,mapTextPlain(c,first,"Patch  ","patch",cycle));
+            view.setTextViewText(R.id.widget_map_prog_text,mapTextPlain(c,first,"Prog.  ","pill",cycle));
+            view.setTextViewText(R.id.widget_map_bleeding_text,mapText(c,first,"Blood  ","bleeding",cycle));
+            view.setTextViewText(R.id.widget_map_pain_text,mapText(c,first,"Pain   ","pain",cycle));
+            view.setTextViewText(R.id.widget_map_mood_text,mapText(c,first,"Mood   ","mood",cycle));
+            view.setTextViewText(R.id.widget_map_overall_text,mapText(c,first,"Feel   ","overall",cycle));
+            view.setViewVisibility(R.id.widget_map_bleeding_text,State.showMap(c,"bleeding")?android.view.View.VISIBLE:android.view.View.GONE);
+            view.setViewVisibility(R.id.widget_map_pain_text,State.showMap(c,"pain")?android.view.View.VISIBLE:android.view.View.GONE);
+            view.setViewVisibility(R.id.widget_map_mood_text,State.showMap(c,"mood")?android.view.View.VISIBLE:android.view.View.GONE);
+            view.setViewVisibility(R.id.widget_map_overall_text,State.showMap(c,"overall")?android.view.View.VISIBLE:android.view.View.GONE);
+            boolean patchDue=State.scheduled(c,today,"patch");
+            boolean pillDue=State.scheduled(c,today,"pill");
+            boolean checkinDue=State.scheduled(c,today,"checkin");
+            boolean healthDone=State.confirmed(c,"checkin")||State.dailyInt(c,today,"pain")>=0||State.dailyInt(c,today,"mood")>=0||State.dailyInt(c,today,"overall")>=0||!State.dailyText(c,today,"bleeding").isEmpty();
+            view.setViewVisibility(R.id.widget_actions,(patchDue||pillDue||checkinDue)?android.view.View.VISIBLE:android.view.View.GONE);
+            view.setViewVisibility(R.id.widget_action_patch,patchDue?android.view.View.VISIBLE:android.view.View.GONE);
+            view.setViewVisibility(R.id.widget_action_pill,pillDue?android.view.View.VISIBLE:android.view.View.GONE);
+            view.setViewVisibility(R.id.widget_action_checkin,checkinDue?android.view.View.VISIBLE:android.view.View.GONE);
+            if(patchDue){boolean done=State.confirmed(c,"patch");view.setTextViewText(R.id.widget_action_patch,done?"● Patch changed today":"● Change patch");view.setTextColor(R.id.widget_action_patch,done?Color.rgb(42,150,92):Color.rgb(205,65,76));view.setBoolean(R.id.widget_action_patch,"setEnabled",!done);view.setOnClickPendingIntent(R.id.widget_action_patch,ReminderReceiver.action(c,"patch","done",30));}
+            if(pillDue){boolean done=State.confirmed(c,"pill");view.setTextViewText(R.id.widget_action_pill,done?"● Progesterone taken today":"● Take progesterone");view.setTextColor(R.id.widget_action_pill,done?Color.rgb(42,150,92):Color.rgb(205,65,76));view.setBoolean(R.id.widget_action_pill,"setEnabled",!done);view.setOnClickPendingIntent(R.id.widget_action_pill,ReminderReceiver.action(c,"pill","done",31));}
+            if(checkinDue){view.setTextViewText(R.id.widget_action_checkin,healthDone?"● Health check complete":"● Health check");view.setTextColor(R.id.widget_action_checkin,healthDone?Color.rgb(42,150,92):Color.rgb(205,65,76));view.setBoolean(R.id.widget_action_checkin,"setEnabled",!healthDone);view.setOnClickPendingIntent(R.id.widget_action_checkin,ReminderReceiver.openHealth(c));}
+            manager.updateAppWidget(id,view);
+        } catch (RuntimeException brokenWidget) {
+            RemoteViews fallback=new RemoteViews(c.getPackageName(),R.layout.widget);
+            fallback.setTextViewText(R.id.widget_title,"HRT BUDDY");
+            fallback.setTextViewText(R.id.widget_day,"Day "+State.day(c)+" / "+State.cycle(c));
+            fallback.setTextViewText(R.id.widget_status,"Open HRT Buddy to view your cycle");
+            manager.updateAppWidget(id,fallback);
+        }
+    }
+
+    static CharSequence mapText(Context c, LocalDate first, String label, String type, int cycle) {
+        StringBuilder symbols=new StringBuilder(label);
+        int labelLength=symbols.length();
+        int shown=Math.min(cycle,35);
+        for(int i=0;i<shown;i++) {
+            LocalDate date=first.plusDays(i);
+            symbols.append(State.careDate().equals(date)?'▣':(color(c,date,type)==Color.rgb(246,244,249)?'·':'■'));
+        }
+        SpannableString result=new SpannableString(symbols.toString());
+        int cursor=labelLength;
+        for(int i=0;i<shown;i++) {
+            LocalDate date=first.plusDays(i);
+            int cellColor=color(c,date,type);
+            if(cellColor==Color.rgb(246,244,249)) cellColor=Color.rgb(150,145,160);
+            result.setSpan(new ForegroundColorSpan(State.careDate().equals(date)?Color.rgb(101,88,200):cellColor),cursor,cursor+1,SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+            cursor++;
+        }
+        return result;
+    }
+
+    static String mapTextPlain(Context c, LocalDate first, String label, String type, int cycle) {
+        StringBuilder out=new StringBuilder(label);
+        int shown=Math.min(cycle,35);
+        for(int i=0;i<shown;i++) {
+            LocalDate date=first.plusDays(i);
+            out.append(State.careDate().equals(date)?'□':(color(c,date,type)==Color.rgb(246,244,249)?'·':'■'));
+        }
+        return out.toString();
+    }
+
+    public void onEnabled(Context c) { refresh(c); }
+    static void refresh(Context c) { AppWidgetManager manager=AppWidgetManager.getInstance(c);for(int id:manager.getAppWidgetIds(new ComponentName(c,HrtBuddyWidget.class)))update(c,manager,id); }
+}
