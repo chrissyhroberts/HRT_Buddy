@@ -56,6 +56,7 @@ public class HrtBuddyWidget extends AppWidgetProvider {
             view.setOnClickPendingIntent(R.id.widget_root,PendingIntent.getActivity(c,40,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));
             Intent configure=new Intent(c,WidgetConfigureActivity.class);
             view.setOnClickPendingIntent(R.id.widget_title,PendingIntent.getActivity(c,41,configure,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));
+            view.setOnClickPendingIntent(R.id.widget_settings,PendingIntent.getActivity(c,42,configure,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));
             int cycle=Math.max(1,Math.min(60,State.cycle(c)));
             android.os.Bundle options=manager.getAppWidgetOptions(id);
             int width=options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,250));
@@ -150,5 +151,5 @@ public class HrtBuddyWidget extends AppWidgetProvider {
         else if(android.os.Build.VERSION.SDK_INT>=23) am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,next.getTimeInMillis(),pending);
         else am.set(AlarmManager.RTC_WAKEUP,next.getTimeInMillis(),pending);
     }
-    static void refresh(Context c) { scheduleBoundaryRefresh(c); AppWidgetManager manager=AppWidgetManager.getInstance(c);for(int id:manager.getAppWidgetIds(new ComponentName(c,HrtBuddyWidget.class)))update(c,manager,id); }
+    static void refresh(Context c) { scheduleBoundaryRefresh(c); AppWidgetManager manager=AppWidgetManager.getInstance(c);for(Class<?> provider:new Class<?>[]{HrtBuddyWidget.class,HrtBuddyWidgetCompact.class,HrtBuddyWidgetLarge.class})for(int id:manager.getAppWidgetIds(new ComponentName(c,provider)))update(c,manager,id); }
 }
