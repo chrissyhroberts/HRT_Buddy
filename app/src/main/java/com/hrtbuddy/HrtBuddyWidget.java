@@ -58,7 +58,7 @@ public class HrtBuddyWidget extends AppWidgetProvider {
             android.os.Bundle options=manager.getAppWidgetOptions(id);
             int width=options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,250));
             float mapSize=Math.max(9f,Math.min(15f,10f+(width-250)/90f));
-            for(int mapId:new int[]{R.id.widget_map_patch_text,R.id.widget_map_prog_text,R.id.widget_map_bleeding_text,R.id.widget_map_pain_text,R.id.widget_map_mood_text,R.id.widget_map_overall_text}) view.setTextViewTextSize(mapId,android.util.TypedValue.COMPLEX_UNIT_SP,mapSize);
+            for(int mapId:new int[]{R.id.widget_map_patch_text,R.id.widget_map_prog_text,R.id.widget_map_bleeding_text,R.id.widget_map_pain_text,R.id.widget_map_mood_text,R.id.widget_map_overall_text,R.id.widget_map_today_marker}) view.setTextViewTextSize(mapId,android.util.TypedValue.COMPLEX_UNIT_SP,mapSize);
             view.setTextViewText(R.id.widget_title,"HRT BUDDY  ·  FULL CYCLE");
             view.setTextViewText(R.id.widget_day,"Day "+State.day(c)+" / "+cycle);
             view.setTextViewText(R.id.widget_status,State.status(c));
@@ -71,6 +71,7 @@ public class HrtBuddyWidget extends AppWidgetProvider {
             view.setTextViewText(R.id.widget_map_pain_text,mapText(c,first,"Pain   ","pain",cycle));
             view.setTextViewText(R.id.widget_map_mood_text,mapText(c,first,"Mood   ","mood",cycle));
             view.setTextViewText(R.id.widget_map_overall_text,mapText(c,first,"Feel   ","overall",cycle));
+            view.setTextViewText(R.id.widget_map_today_marker,todayMarker(first,today,cycle));
             view.setViewVisibility(R.id.widget_map_bleeding_text,State.showMap(c,"bleeding")?android.view.View.VISIBLE:android.view.View.GONE);
             view.setViewVisibility(R.id.widget_map_pain_text,State.showMap(c,"pain")?android.view.View.VISIBLE:android.view.View.GONE);
             view.setViewVisibility(R.id.widget_map_mood_text,State.showMap(c,"mood")?android.view.View.VISIBLE:android.view.View.GONE);
@@ -102,7 +103,7 @@ public class HrtBuddyWidget extends AppWidgetProvider {
         int shown=Math.min(cycle,35);
         for(int i=0;i<shown;i++) {
             LocalDate date=first.plusDays(i);
-            symbols.append(State.careDate().equals(date)?'┃':(color(c,date,type)==Color.rgb(246,244,249)?'·':'■'));
+            symbols.append(color(c,date,type)==Color.rgb(246,244,249)?'·':'■');
         }
         SpannableString result=new SpannableString(symbols.toString());
         int cursor=labelLength;
@@ -110,30 +111,29 @@ public class HrtBuddyWidget extends AppWidgetProvider {
             LocalDate date=first.plusDays(i);
             int cellColor=color(c,date,type);
             if(cellColor==Color.rgb(246,244,249)) cellColor=Color.rgb(150,145,160);
-            result.setSpan(new ForegroundColorSpan(State.careDate().equals(date)?Color.rgb(205,65,76):cellColor),cursor,cursor+1,SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+            result.setSpan(new ForegroundColorSpan(cellColor),cursor,cursor+1,SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
             cursor++;
         }
         return result;
     }
 
-    static CharSequence mapTextPlain(Context c, LocalDate first, String label, String type, int cycle) {
+    static String mapTextPlain(Context c, LocalDate first, String label, String type, int cycle) {
         StringBuilder out=new StringBuilder(label);
-        int labelLength=out.length();
         int shown=Math.min(cycle,35);
         for(int i=0;i<shown;i++) {
             LocalDate date=first.plusDays(i);
-            out.append(State.careDate().equals(date)?'┃':(color(c,date,type)==Color.rgb(246,244,249)?'·':'■'));
+            out.append(State.careDate().equals(date)?'□':(color(c,date,type)==Color.rgb(246,244,249)?'·':'■'));
         }
-        SpannableString result=new SpannableString(out.toString());
-        int cursor=labelLength;
-        for(int i=0;i<shown;i++) {
-            LocalDate date=first.plusDays(i);
-            int cellColor=color(c,date,type);
-            if(cellColor==Color.rgb(246,244,249)) cellColor=Color.rgb(80,76,92);
-            result.setSpan(new ForegroundColorSpan(State.careDate().equals(date)?Color.rgb(205,65,76):cellColor),cursor,cursor+1,SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
-            cursor++;
-        }
-        return result;
+        return out.toString();
+    }
+
+    static String todayMarker(LocalDate first,LocalDate today,int cycle) {
+        int index=(int)java.time.temporal.ChronoUnit.DAYS.between(first,today);
+        if(index<0||index>=Math.min(cycle,35)) return "";
+        StringBuilder marker=new StringBuilder("       ");
+        for(int i=0;i<index;i++) marker.append(' ');
+        marker.append('▲');
+        return marker.toString();
     }
 
     public void onEnabled(Context c) { scheduleBoundaryRefresh(c); refresh(c); }
