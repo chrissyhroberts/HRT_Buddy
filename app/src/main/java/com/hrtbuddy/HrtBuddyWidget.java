@@ -1,5 +1,6 @@
 package com.hrtbuddy;
 
+import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
@@ -11,9 +12,12 @@ import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.widget.RemoteViews;
 import java.time.LocalDate;
+import java.util.Calendar;
 
 public class HrtBuddyWidget extends AppWidgetProvider {
-    public void onUpdate(Context c, AppWidgetManager manager, int[] ids) { for (int id : ids) update(c, manager, id); }
+    static final String ACTION_CARE_DAY_REFRESH="com.hrtbuddy.ACTION_CARE_DAY_REFRESH";
+    public void onReceive(Context c, Intent i) { super.onReceive(c,i); if(ACTION_CARE_DAY_REFRESH.equals(i.getAction())) refresh(c); }
+    public void onUpdate(Context c, AppWidgetManager manager, int[] ids) { scheduleBoundaryRefresh(c); for (int id : ids) update(c, manager, id); }
     public void onAppWidgetOptionsChanged(Context c, AppWidgetManager manager, int id, android.os.Bundle options) { update(c, manager, id); }
 
     static int scoreColor(int score) {
@@ -116,6 +120,17 @@ public class HrtBuddyWidget extends AppWidgetProvider {
         return out.toString();
     }
 
-    public void onEnabled(Context c) { refresh(c); }
-    static void refresh(Context c) { AppWidgetManager manager=AppWidgetManager.getInstance(c);for(int id:manager.getAppWidgetIds(new ComponentName(c,HrtBuddyWidget.class)))update(c,manager,id); }
+    public void onEnabled(Context c) { scheduleBoundaryRefresh(c); refresh(c); }
+    static void scheduleBoundaryRefresh(Context c) {
+        AlarmManager am=(AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
+        Calendar next=Calendar.getInstance();
+        next.set(Calendar.HOUR_OF_DAY,3); next.set(Calendar.MINUTE,0); next.set(Calendar.SECOND,0); next.set(Calendar.MILLISECOND,0);
+        if(next.getTimeInMillis()<=System.currentTimeMillis()) next.add(Calendar.DATE,1);
+        Intent intent=new Intent(c,HrtBuddyWidget.class).setAction(ACTION_CARE_DAY_REFRESH);
+        PendingIntent pending=PendingIntent.getBroadcast(c,90,intent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+        if(android.os.Build.VERSION.SDK_INT>=31&&am.canScheduleExactAlarms()) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,next.getTimeInMillis(),pending);
+        else if(android.os.Build.VERSION.SDK_INT>=23) am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,next.getTimeInMillis(),pending);
+        else am.set(AlarmManager.RTC_WAKEUP,next.getTimeInMillis(),pending);
+    }
+    static void refresh(Context c) { scheduleBoundaryRefresh(c); AppWidgetManager manager=AppWidgetManager.getInstance(c);for(int id:manager.getAppWidgetIds(new ComponentName(c,HrtBuddyWidget.class)))update(c,manager,id); }
 }
