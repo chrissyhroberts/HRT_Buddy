@@ -49,7 +49,8 @@ public class HrtBuddyWidget extends AppWidgetProvider {
         return value<0?Color.rgb(246,244,249):scoreColor(type,value);
     }
 
-    static void update(Context c, AppWidgetManager manager, int id) {
+    static void update(Context c, AppWidgetManager manager, int id) { update(c,manager,id,-1); }
+    static void update(Context c, AppWidgetManager manager, int id, int preset) {
         try {
             RemoteViews view=new RemoteViews(c.getPackageName(),R.layout.widget);
             Intent open=new Intent(c,MainActivity.class);
@@ -60,7 +61,8 @@ public class HrtBuddyWidget extends AppWidgetProvider {
             int cycle=Math.max(1,Math.min(60,State.cycle(c)));
             android.os.Bundle options=manager.getAppWidgetOptions(id);
             int width=options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,250));
-            float mapSize=Math.max(9f,Math.min(15f,10f+(width-250)/90f));
+            int sizeSetting=preset>=0?preset:Math.max(0,Math.min(2,State.p(c).getInt("widgetMapSize",1)));
+            float mapSize=Math.max(8f,Math.min(16f,9f+(width-250)/90f+sizeSetting*1.5f));
             for(int mapId:new int[]{R.id.widget_map_patch_text,R.id.widget_map_prog_text,R.id.widget_map_bleeding_text,R.id.widget_map_pain_text,R.id.widget_map_mood_text,R.id.widget_map_overall_text,R.id.widget_map_today_marker}) view.setTextViewTextSize(mapId,android.util.TypedValue.COMPLEX_UNIT_SP,mapSize);
             view.setTextViewText(R.id.widget_title,"HRT BUDDY  ·  FULL CYCLE");
             view.setTextViewText(R.id.widget_day,"Day "+State.day(c)+" / "+cycle);
@@ -151,5 +153,5 @@ public class HrtBuddyWidget extends AppWidgetProvider {
         else if(android.os.Build.VERSION.SDK_INT>=23) am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,next.getTimeInMillis(),pending);
         else am.set(AlarmManager.RTC_WAKEUP,next.getTimeInMillis(),pending);
     }
-    static void refresh(Context c) { scheduleBoundaryRefresh(c); AppWidgetManager manager=AppWidgetManager.getInstance(c);for(Class<?> provider:new Class<?>[]{HrtBuddyWidget.class,HrtBuddyWidgetCompact.class,HrtBuddyWidgetLarge.class})for(int id:manager.getAppWidgetIds(new ComponentName(c,provider)))update(c,manager,id); }
+    static void refresh(Context c) { scheduleBoundaryRefresh(c); AppWidgetManager manager=AppWidgetManager.getInstance(c);for(int id:manager.getAppWidgetIds(new ComponentName(c,HrtBuddyWidget.class)))update(c,manager,id);for(int id:manager.getAppWidgetIds(new ComponentName(c,HrtBuddyWidgetCompact.class)))update(c,manager,id,0);for(int id:manager.getAppWidgetIds(new ComponentName(c,HrtBuddyWidgetLarge.class)))update(c,manager,id,2); }
 }
