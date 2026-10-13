@@ -54,6 +54,8 @@ public class HrtBuddyWidget extends AppWidgetProvider {
             RemoteViews view=new RemoteViews(c.getPackageName(),R.layout.widget);
             Intent open=new Intent(c,MainActivity.class);
             view.setOnClickPendingIntent(R.id.widget_root,PendingIntent.getActivity(c,40,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));
+            Intent configure=new Intent(c,WidgetConfigureActivity.class);
+            view.setOnClickPendingIntent(R.id.widget_title,PendingIntent.getActivity(c,41,configure,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));
             int cycle=Math.max(1,Math.min(60,State.cycle(c)));
             android.os.Bundle options=manager.getAppWidgetOptions(id);
             int width=options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,250));
@@ -132,7 +134,7 @@ public class HrtBuddyWidget extends AppWidgetProvider {
         if(index<0||index>=Math.min(cycle,35)) return "";
         StringBuilder marker=new StringBuilder("       ");
         for(int i=0;i<index;i++) marker.append(' ');
-        marker.append('▲');
+        marker.append('▼');
         return marker.toString();
     }
 
