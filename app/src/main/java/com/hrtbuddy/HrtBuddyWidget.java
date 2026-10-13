@@ -20,8 +20,10 @@ public class HrtBuddyWidget extends AppWidgetProvider {
     public void onUpdate(Context c, AppWidgetManager manager, int[] ids) { scheduleBoundaryRefresh(c); for (int id : ids) update(c, manager, id); }
     public void onAppWidgetOptionsChanged(Context c, AppWidgetManager manager, int id, android.os.Bundle options) { update(c, manager, id); }
 
-    static int scoreColor(int score) {
-        int[] palette={Color.rgb(58,190,139),Color.rgb(65,190,168),Color.rgb(73,184,196),Color.rgb(83,174,210),Color.rgb(105,160,215),Color.rgb(126,143,211),Color.rgb(151,126,210),Color.rgb(190,112,190),Color.rgb(221,105,135),Color.rgb(216,82,91)};
+    static int scoreColor(String type,int score) {
+        int[] pain={Color.rgb(255,225,225),Color.rgb(255,210,210),Color.rgb(255,195,195),Color.rgb(250,177,177),Color.rgb(246,158,158),Color.rgb(239,139,139),Color.rgb(232,119,119),Color.rgb(224,98,98),Color.rgb(214,75,80),Color.rgb(195,45,58)};
+        int[] wellbeing={Color.rgb(217,79,92),Color.rgb(230,103,106),Color.rgb(240,128,128),Color.rgb(245,154,133),Color.rgb(246,179,106),Color.rgb(233,201,74),Color.rgb(183,201,74),Color.rgb(127,196,107),Color.rgb(85,184,117),Color.rgb(58,170,106)};
+        int[] palette=type.equals("pain")?pain:wellbeing;
         return palette[Math.max(1,Math.min(10,score))-1];
     }
 
@@ -35,16 +37,16 @@ public class HrtBuddyWidget extends AppWidgetProvider {
         }
         if(type.equals("bleeding")) {
             String value=State.dailyText(c,date,"bleeding");
-            if(value.equals("None")) return Color.rgb(174,218,190);
-            if(value.equals("Heavy")) return Color.rgb(216,82,91);
-            if(value.equals("Medium")) return Color.rgb(221,105,135);
-            if(value.equals("Light")) return Color.rgb(248,176,176);
-            if(value.equals("Spotting")) return Color.rgb(255,218,150);
+            if(value.equals("None")) return Color.rgb(246,244,249);
+            if(value.equals("Heavy")) return Color.rgb(195,45,58);
+            if(value.equals("Medium")) return Color.rgb(226,108,112);
+            if(value.equals("Light")) return Color.rgb(249,178,178);
+            if(value.equals("Spotting")) return Color.rgb(255,215,215);
             return Color.rgb(246,244,249);
         }
         if(State.skippedOn(c,date,"checkin")) return Color.rgb(239,145,148);
         int value=State.dailyInt(c,date,type);
-        return value<0?Color.rgb(246,244,249):scoreColor(value);
+        return value<0?Color.rgb(246,244,249):scoreColor(type,value);
     }
 
     static void update(Context c, AppWidgetManager manager, int id) {
