@@ -55,6 +55,10 @@ public class HrtBuddyWidget extends AppWidgetProvider {
             Intent open=new Intent(c,MainActivity.class);
             view.setOnClickPendingIntent(R.id.widget_root,PendingIntent.getActivity(c,40,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));
             int cycle=Math.max(1,Math.min(60,State.cycle(c)));
+            android.os.Bundle options=manager.getAppWidgetOptions(id);
+            int width=options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,250));
+            float mapSize=Math.max(9f,Math.min(15f,10f+(width-250)/90f));
+            for(int mapId:new int[]{R.id.widget_map_patch_text,R.id.widget_map_prog_text,R.id.widget_map_bleeding_text,R.id.widget_map_pain_text,R.id.widget_map_mood_text,R.id.widget_map_overall_text}) view.setTextViewTextSize(mapId,android.util.TypedValue.COMPLEX_UNIT_SP,mapSize);
             view.setTextViewText(R.id.widget_title,"HRT BUDDY  ·  FULL CYCLE");
             view.setTextViewText(R.id.widget_day,"Day "+State.day(c)+" / "+cycle);
             view.setTextViewText(R.id.widget_status,State.status(c));
@@ -98,7 +102,7 @@ public class HrtBuddyWidget extends AppWidgetProvider {
         int shown=Math.min(cycle,35);
         for(int i=0;i<shown;i++) {
             LocalDate date=first.plusDays(i);
-            symbols.append(State.careDate().equals(date)?'▣':(color(c,date,type)==Color.rgb(246,244,249)?'·':'■'));
+            symbols.append(State.careDate().equals(date)?'┃':(color(c,date,type)==Color.rgb(246,244,249)?'·':'■'));
         }
         SpannableString result=new SpannableString(symbols.toString());
         int cursor=labelLength;
@@ -106,20 +110,30 @@ public class HrtBuddyWidget extends AppWidgetProvider {
             LocalDate date=first.plusDays(i);
             int cellColor=color(c,date,type);
             if(cellColor==Color.rgb(246,244,249)) cellColor=Color.rgb(150,145,160);
-            result.setSpan(new ForegroundColorSpan(State.careDate().equals(date)?Color.rgb(101,88,200):cellColor),cursor,cursor+1,SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+            result.setSpan(new ForegroundColorSpan(State.careDate().equals(date)?Color.rgb(205,65,76):cellColor),cursor,cursor+1,SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
             cursor++;
         }
         return result;
     }
 
-    static String mapTextPlain(Context c, LocalDate first, String label, String type, int cycle) {
+    static CharSequence mapTextPlain(Context c, LocalDate first, String label, String type, int cycle) {
         StringBuilder out=new StringBuilder(label);
+        int labelLength=out.length();
         int shown=Math.min(cycle,35);
         for(int i=0;i<shown;i++) {
             LocalDate date=first.plusDays(i);
-            out.append(State.careDate().equals(date)?'□':(color(c,date,type)==Color.rgb(246,244,249)?'·':'■'));
+            out.append(State.careDate().equals(date)?'┃':(color(c,date,type)==Color.rgb(246,244,249)?'·':'■'));
         }
-        return out.toString();
+        SpannableString result=new SpannableString(out.toString());
+        int cursor=labelLength;
+        for(int i=0;i<shown;i++) {
+            LocalDate date=first.plusDays(i);
+            int cellColor=color(c,date,type);
+            if(cellColor==Color.rgb(246,244,249)) cellColor=Color.rgb(80,76,92);
+            result.setSpan(new ForegroundColorSpan(State.careDate().equals(date)?Color.rgb(205,65,76):cellColor),cursor,cursor+1,SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+            cursor++;
+        }
+        return result;
     }
 
     public void onEnabled(Context c) { scheduleBoundaryRefresh(c); refresh(c); }
