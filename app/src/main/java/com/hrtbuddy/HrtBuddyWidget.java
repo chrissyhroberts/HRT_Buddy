@@ -127,8 +127,9 @@ public class HrtBuddyWidget extends AppWidgetProvider {
         int shown=Math.min(cycle,35);
         for(int i=0;i<shown;i++) {
             LocalDate date=first.plusDays(i);
-            boolean missed=State.skippedOn(c,date,type)||date.isBefore(State.careDate());
             boolean scheduled=State.scheduled(c,date,type);
+            boolean confirmed=State.confirmedOn(c,date,type);
+            boolean missed=scheduled&&!confirmed&&(State.skippedOn(c,date,type)||date.isBefore(State.careDate()));
             out.append(missed?'×':State.careDate().equals(date)?'□':(!scheduled?'·':'■'));
         }
         return out.toString();
