@@ -29,7 +29,7 @@ public class HrtBuddyWidget extends AppWidgetProvider {
 
     static int color(Context c, LocalDate date, String type) {
         LocalDate today=State.careDate();
-        if(type.equals("patch")||type.equals("pill")) {
+        if(type.equals("patch")||type.equals("pill")||type.equals("vpc")) {
             if(!State.scheduled(c,date,type)) return Color.rgb(246,244,249);
             if(State.confirmedOn(c,date,type)) return Color.rgb(126,205,145);
             if(State.skippedOn(c,date,type)||date.isBefore(today)) return Color.rgb(239,145,148);
@@ -63,7 +63,7 @@ public class HrtBuddyWidget extends AppWidgetProvider {
             int width=options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,250));
             int sizeSetting=preset>=0?preset:Math.max(0,Math.min(2,State.p(c).getInt("widgetMapSize",1)));
             float mapSize=Math.max(8f,Math.min(16f,9f+(width-250)/90f+sizeSetting*1.5f));
-            for(int mapId:new int[]{R.id.widget_map_patch_text,R.id.widget_map_prog_text,R.id.widget_map_bleeding_text,R.id.widget_map_pain_text,R.id.widget_map_mood_text,R.id.widget_map_overall_text,R.id.widget_map_today_marker}) view.setTextViewTextSize(mapId,android.util.TypedValue.COMPLEX_UNIT_SP,mapSize);
+            for(int mapId:new int[]{R.id.widget_map_patch_text,R.id.widget_map_prog_text,R.id.widget_map_vpc_text,R.id.widget_map_bleeding_text,R.id.widget_map_pain_text,R.id.widget_map_mood_text,R.id.widget_map_overall_text,R.id.widget_map_today_marker}) view.setTextViewTextSize(mapId,android.util.TypedValue.COMPLEX_UNIT_SP,mapSize);
             view.setTextViewText(R.id.widget_title,"HRT BUDDY  ·  FULL CYCLE");
             view.setTextViewText(R.id.widget_day,"Day "+State.day(c)+" / "+cycle);
             view.setTextViewText(R.id.widget_status,State.status(c));
@@ -72,25 +72,30 @@ public class HrtBuddyWidget extends AppWidgetProvider {
             LocalDate first=State.cycleStart(c);
             view.setTextViewText(R.id.widget_map_patch_text,mapTextPlain(c,first,"Patch  ","patch",cycle));
             view.setTextViewText(R.id.widget_map_prog_text,mapTextPlain(c,first,"Prog.  ","pill",cycle));
+            view.setTextViewText(R.id.widget_map_vpc_text,mapTextPlain(c,first,"VPC   ","vpc",cycle));
             view.setTextViewText(R.id.widget_map_bleeding_text,mapText(c,first,"Blood  ","bleeding",cycle));
             view.setTextViewText(R.id.widget_map_pain_text,mapText(c,first,"Pain   ","pain",cycle));
             view.setTextViewText(R.id.widget_map_mood_text,mapText(c,first,"Mood   ","mood",cycle));
             view.setTextViewText(R.id.widget_map_overall_text,mapText(c,first,"Feel   ","overall",cycle));
             view.setTextViewText(R.id.widget_map_today_marker,todayMarker(first,today,cycle));
+            view.setViewVisibility(R.id.widget_map_vpc_text,State.showMap(c,"vpc")?android.view.View.VISIBLE:android.view.View.GONE);
             view.setViewVisibility(R.id.widget_map_bleeding_text,State.showMap(c,"bleeding")?android.view.View.VISIBLE:android.view.View.GONE);
             view.setViewVisibility(R.id.widget_map_pain_text,State.showMap(c,"pain")?android.view.View.VISIBLE:android.view.View.GONE);
             view.setViewVisibility(R.id.widget_map_mood_text,State.showMap(c,"mood")?android.view.View.VISIBLE:android.view.View.GONE);
             view.setViewVisibility(R.id.widget_map_overall_text,State.showMap(c,"overall")?android.view.View.VISIBLE:android.view.View.GONE);
             boolean patchDue=State.scheduled(c,today,"patch");
             boolean pillDue=State.scheduled(c,today,"pill");
+            boolean vpcDue=State.scheduled(c,today,"vpc");
             boolean checkinDue=State.scheduled(c,today,"checkin");
             boolean healthDone=State.confirmed(c,"checkin")||State.dailyInt(c,today,"pain")>=0||State.dailyInt(c,today,"mood")>=0||State.dailyInt(c,today,"overall")>=0||!State.dailyText(c,today,"bleeding").isEmpty();
-            view.setViewVisibility(R.id.widget_actions,(patchDue||pillDue||checkinDue)?android.view.View.VISIBLE:android.view.View.GONE);
+            view.setViewVisibility(R.id.widget_actions,(patchDue||pillDue||vpcDue||checkinDue)?android.view.View.VISIBLE:android.view.View.GONE);
             view.setViewVisibility(R.id.widget_action_patch,patchDue?android.view.View.VISIBLE:android.view.View.GONE);
             view.setViewVisibility(R.id.widget_action_pill,pillDue?android.view.View.VISIBLE:android.view.View.GONE);
+            view.setViewVisibility(R.id.widget_action_vpc,vpcDue?android.view.View.VISIBLE:android.view.View.GONE);
             view.setViewVisibility(R.id.widget_action_checkin,checkinDue?android.view.View.VISIBLE:android.view.View.GONE);
             if(patchDue){boolean done=State.confirmed(c,"patch");view.setTextViewText(R.id.widget_action_patch,done?"● Patch changed today":"● Change patch");view.setTextColor(R.id.widget_action_patch,done?Color.rgb(42,150,92):Color.rgb(205,65,76));view.setBoolean(R.id.widget_action_patch,"setEnabled",!done);view.setOnClickPendingIntent(R.id.widget_action_patch,ReminderReceiver.action(c,"patch","done",30));}
             if(pillDue){boolean done=State.confirmed(c,"pill");view.setTextViewText(R.id.widget_action_pill,done?"● Progesterone taken today":"● Take progesterone");view.setTextColor(R.id.widget_action_pill,done?Color.rgb(42,150,92):Color.rgb(205,65,76));view.setBoolean(R.id.widget_action_pill,"setEnabled",!done);view.setOnClickPendingIntent(R.id.widget_action_pill,ReminderReceiver.action(c,"pill","done",31));}
+            if(vpcDue){boolean done=State.confirmed(c,"vpc");view.setTextViewText(R.id.widget_action_vpc,done?"● VPC used today":"● Use VPC");view.setTextColor(R.id.widget_action_vpc,done?Color.rgb(42,150,92):Color.rgb(205,65,76));view.setBoolean(R.id.widget_action_vpc,"setEnabled",!done);view.setOnClickPendingIntent(R.id.widget_action_vpc,ReminderReceiver.action(c,"vpc","done",32));}
             if(checkinDue){view.setTextViewText(R.id.widget_action_checkin,healthDone?"● Health check complete":"● Health check");view.setTextColor(R.id.widget_action_checkin,healthDone?Color.rgb(42,150,92):Color.rgb(205,65,76));view.setBoolean(R.id.widget_action_checkin,"setEnabled",!healthDone);view.setOnClickPendingIntent(R.id.widget_action_checkin,ReminderReceiver.openHealth(c));}
             manager.updateAppWidget(id,view);
         } catch (RuntimeException brokenWidget) {
