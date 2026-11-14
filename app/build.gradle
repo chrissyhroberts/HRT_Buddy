@@ -8,7 +8,7 @@ def releaseSigningFile = rootProject.file('signing/keystore.properties')
 if (releaseSigningFile.exists()) releaseSigningFile.withInputStream { releaseSigning.load(it) }
 
 android { namespace 'com.hrtbuddy'; compileSdk 35
-    defaultConfig { applicationId 'com.hrtbuddy'; minSdk 26; targetSdk 35; versionCode 3; versionName '1.0.2' }
+    defaultConfig { applicationId 'com.hrtbuddy'; minSdk 26; targetSdk 35; versionCode 4; versionName '1.0.3' }
     signingConfigs {
         release {
             if (releaseSigningFile.exists()) {

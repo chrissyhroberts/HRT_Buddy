@@ -9,6 +9,7 @@ HRT Buddy keeps the practical parts of an HRT routine in one place: patch change
 - Configure cycle length and current cycle day
 - Set patch days and a patch reminder time
 - Set progesterone start/end days and reminder time
+- Schedule vaginal progesterone cream (VPC) independently by weekday or every N days, with cycle-day bounds and its own reminder time
 - Schedule a daily health check-in
 - Optionally record:
   - Bleeding: none, spotting, light, medium, or heavy
@@ -20,7 +21,7 @@ HRT Buddy keeps the practical parts of an HRT routine in one place: patch change
 - Adjust the current cycle day with confirmation and data-safety warnings
 - Import and export an Excel-compatible CSV backup
 - Use temporary demo data for testing without replacing real data
-- Add an Android home-screen widget with one-tap actions and cycle swimlanes
+- Add an Android home-screen widget with one-tap actions, cycle swimlanes, health summaries, and a today marker
 
 ## Data and privacy
 
@@ -50,6 +51,20 @@ The APK is produced at:
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
+Build the stable-signed release APK with:
+
+```bash
+./gradlew testDebugUnitTest assembleRelease
+```
+
+The release APK is produced at:
+
+```text
+app/build/outputs/apk/release/app-release.apk
+```
+
+The release build reads `signing/keystore.properties` and the local release keystore. These files are intentionally excluded from Git; keep a secure backup of the keystore because Android updates require the same signing key.
+
 ## Installing
 
 Install the debug APK on an Android device or emulator. After installing, add the HRT Buddy widget from the Android home-screen widget picker. If a previous widget instance displays a loading error after an update, remove it and add it again so the launcher refreshes its cached layout.
@@ -62,4 +77,4 @@ Install the debug APK on an Android device or emulator. After installing, add th
 
 ## Release
 
-The current release is [v1.0.0](https://github.com/chrissyhroberts/HRT_Buddy/releases/tag/v1.0.0).
+The current release is [v1.0.3](https://github.com/chrissyhroberts/HRT_Buddy/releases/tag/v1.0.3).
