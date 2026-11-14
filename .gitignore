@@ -15,6 +15,7 @@ daemon/
 kotlin-profile/
 native/
 notifications/
+signing/
 android/
 app/.gradle/
 app/.idea/
