@@ -18,7 +18,7 @@ final class State {
     static boolean trackMood(Context c) { return p(c).getBoolean("trackMood",false); }
     static boolean trackOverall(Context c) { return p(c).getBoolean("trackOverall",false); }
     static boolean trackBleeding(Context c) { return p(c).getBoolean("trackBleeding",true); }
-    static boolean showMap(Context c,String type) { return p(c).getBoolean("show_"+type,type.equals("vpc")&&p(c).getBoolean("vpcEnabled",false)); }
+    static boolean showMap(Context c,String type) { SharedPreferences x=p(c); boolean defaultVisible=type.equals("vpc")?x.getBoolean("vpcEnabled",false):type.equals("patch")||type.equals("pill")||type.equals("bleeding")||type.equals("pain")&&trackPain(c)||type.equals("mood")&&trackMood(c)||type.equals("overall")&&trackOverall(c); return x.getBoolean("show_"+type,defaultVisible); }
     static int dailyInt(Context c,LocalDate date,String key) { return p(c).getInt("log_"+date+"_"+key,-1); }
     static String dailyText(Context c,LocalDate date,String key) { return p(c).getString("log_"+date+"_"+key,""); }
     static boolean hasDailyData(Context c,String type) { for(String key:p(c).getAll().keySet()) if(key.startsWith("log_")&&key.endsWith("_"+type)) return true; return false; }
